@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Managed File Transfer 101</title>
+<style>
+  :root {
+    --coral:    #FF7C66;
+    --purple:   #A03291;
+    --navy:     #072B55;
+    --blue:     #0085F0;
+    --green:    #0EC38B;
+    --periwinkle:#4B4FE2;
+    --bg:       #F5F6FA;
+    --card:     #FFFFFF;
+    --text:     #0D1B2A;
+    --muted:    #536880;
+    --border:   #DDE3EF;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.65;
+  }
+
+  /* ── Header ── */
+  header {
+    background: linear-gradient(135deg, var(--coral) 0%, var(--purple) 100%);
+    padding: 48px 40px 44px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    right: -80px; top: -80px;
+    width: 340px; height: 340px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    pointer-events: none;
+  }
+  header::after {
+    content: '';
+    position: absolute;
+    left: 55%; bottom: -60px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+    pointer-events: none;
+  }
+  /* Ensure ALL header text is white */
+  header,
+  header h1,
+  header p,
+  header span,
+  header div,
+  header a {
+    color: #ffffff !important;
+  }
+  .header-inner { position: relative; z-index: 1; }
+  .header-badge {
+    display: inline-block;
+    background: rgba(255,255,255,0.20);
+    border: 1.5px solid rgba(255,255,255,0.40);
+    border-radius: 20px;
+    padding: 5px 16px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  header h1 {
+    font-size: 34px;
+    font-weight: 800;
+    margin-bottom: 12px;
+    line-height: 1.2;
+  }
+  header .subtitle {
+    font-size: 16px;
+    opacity: 0.9;
+    max-width: 660px;
+    line-height: 1.55;
+  }
+  .header-meta {
+    margin-top: 28px;
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+  }
+  .meta-pill {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12.5px;
+    font-weight: 500;
+  }
+
+  /* ── Layout ── */
+  .layout {
+    display: grid;
+    grid-template-columns: 228px 1fr;
+    min-height: calc(100vh - 180px);
+  }
+
+  /* ── Sidebar ── */
+  nav {
+    background: var(--navy);
+    padding: 28px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+  }
+  .nav-section-label {
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.4);
+    padding: 16px 20px 6px;
+  }
+  .nav-section-label:first-child { padding-top: 4px; }
+  nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 20px;
+    text-decoration: none;
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    border-left: 3px solid transparent;
+    transition: all 0.15s ease;
+  }
+  nav a:hover {
+    color: #fff;
+    background: rgba(255,255,255,0.06);
+    border-left-color: rgba(255,255,255,0.3);
+  }
+  nav a.active {
+    color: #fff;
+    background: rgba(255,124,102,0.18);
+    border-left-color: var(--coral);
+    font-weight: 600;
+  }
+  .nav-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.12);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10.5px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  nav a.active .nav-num {
+    background: var(--coral);
+    color: #fff;
+  }
+
+  /* ── Main ── */
+  main {
+    padding: 44px 52px 60px;
+    max-width: 920px;
+  }
+
+  /* ── Section ── */
+  section {
+    margin-bottom: 60px;
+    scroll-margin-top: 28px;
+  }
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 26px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid var(--border);
+  }
+  .section-num {
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--coral), var(--purple));
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .section-num.check { font-size: 18px; }
+  .section-header h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy);
+    flex: 1;
+  }
+  .section-tag {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    padding: 4px 12px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(255,124,102,0.12), rgba(160,50,145,0.12));
+    color: var(--purple);
+    border: 1px solid rgba(160,50,145,0.2);
+    white-space: nowrap;
+  }
+
+  p { margin-bottom: 14px; }
+  p:last-child { margin-bottom: 0; }
+
+  h3 {
+    font-size: 15.5px;
+    font-weight: 700;
+    color: var(--navy);
+    margin: 26px 0 10px;
+  }
+  h3:first-child { margin-top: 0; }
+
+  /* ── Screenshot ── */
+  .screenshot-wrap {
+    margin: 22px 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1.5px solid var(--border);
+    box-shadow: 0 4px 20px rgba(7,43,85,0.10);
+  }
+  .screenshot-caption {
+    background: var(--navy);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .screenshot-caption::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--coral);
+    flex-shrink: 0;
+  }
+  .screenshot-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* ── Cards ── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 16px;
+    margin: 18px 0;
+  }
+  .card {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    border-top: 3px solid var(--coral);
+  }
+  .card.purple-top { border-top-color: var(--purple); }
+  .card.green-top  { border-top-color: var(--green); }
+  .card.blue-top   { border-top-color: var(--blue); }
+  .card h4 {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 8px;
+  }
+  .card p { font-size: 13.5px; color: var(--muted); margin: 0; }
+
+  /* ── Steps ── */
+  .steps { margin: 16px 0; }
+  .step {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 18px;
+    align-items: flex-start;
+  }
+  .step-num {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--navy);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .step-body h4 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 4px;
+  }
+  .step-body p { font-size: 13.5px; color: var(--muted); margin: 0; }
+
+  /* ── Callouts ── */
+  .callout {
+    border-radius: 10px;
+    padding: 15px 18px;
+    margin: 18px 0;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    font-size: 13.5px;
+  }
+  .callout-icon { font-size: 17px; flex-shrink: 0; margin-top: 1px; line-height: 1; }
+  .callout-body { line-height: 1.55; }
+  .callout-body strong { display: block; font-weight: 700; margin-bottom: 3px; font-size: 13px; color: var(--navy); }
+  .callout-body { color: var(--muted); }
+  .callout.note { background: #FFF8E1; border-left: 4px solid #F0B429; }
+  .callout.tip  { background: #E6FAF3; border-left: 4px solid var(--green); }
+  .callout.info { background: #EEF4FF; border-left: 4px solid var(--blue); }
+  .callout.warn { background: #FFF3E0; border-left: 4px solid #FB923C; }
+
+  /* ── Table ── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 13.5px;
+    background: var(--card);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--navy);
+    color: #fff;
+    padding: 11px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.3px;
+  }
+  td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: top;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #F9FAFC; }
+
+  /* ── Pill tags ── */
+  .pill-grid { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+  .pill {
+    border-radius: 20px;
+    padding: 5px 14px;
+    font-size: 12.5px;
+    font-weight: 600;
+    border: 1.5px solid;
+  }
+  .pill.sftp  { background: #EEF4FF; border-color: #4B4FE2; color: #2930BD; }
+  .pill.s3    { background: #FFF7ED; border-color: #FB923C; color: #C2410C; }
+  .pill.blob  { background: #F5F3FF; border-color: #8B5CF6; color: #5B21B6; }
+  .pill.ftps  { background: #E6FAF3; border-color: var(--green); color: #065F46; }
+  .pill.ftp   { background: #FFF0F0; border-color: #F87171; color: #991B1B; }
+  .pill.gcs   { background: #FFF7F0; border-color: #F97316; color: #9A3412; }
+  .pill.fs    { background: #EEF4FF; border-color: var(--blue); color: #1D4ED8; }
+  .pill.smb   { background: #ECFDF5; border-color: #34D399; color: #065F46; }
+
+  /* ── Scenario box ── */
+  .scenario {
+    background: linear-gradient(135deg, var(--navy) 0%, #1a4a8a 100%);
+    border-radius: 14px;
+    padding: 30px;
+    color: #fff;
+    margin: 20px 0;
+    position: relative;
+    overflow: hidden;
+  }
+  .scenario::after {
+    content: '';
+    position: absolute;
+    right: -40px; bottom: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.04);
+  }
+  .scenario-tag {
+    display: inline-block;
+    background: rgba(255,124,102,0.25);
+    border: 1px solid rgba(255,124,102,0.5);
+    border-radius: 12px;
+    padding: 3px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--coral);
+    margin-bottom: 14px;
+  }
+  .scenario h3 { color: #fff !important; font-size: 19px; margin: 0 0 10px; }
+  .scenario p  { color: rgba(255,255,255,0.82); margin: 0; font-size: 14.5px; }
+
+  /* ── Flow diagram ── */
+  .flow-diagram {
+    background: var(--card);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 24px;
+    margin: 18px 0;
+    text-align: center;
+  }
+  .flow-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin: 6px 0;
+    flex-wrap: wrap;
+  }
+  .fn { border-radius: 8px; padding: 9px 16px; font-size: 13px; font-weight: 600; }
+  .fn.src  { background: #E6FAF3; border: 1.5px solid var(--green);  color: #065F46; }
+  .fn.hub  { background: var(--navy); color: #fff; padding: 12px 22px; }
+  .fn.hq   { background: #EEF4FF; border: 1.5px solid var(--periwinkle); color: #2930BD; }
+  .fn.int  { background: #FFF7ED; border: 1.5px solid #FB923C; color: #C2410C; }
+  .flow-arrow { color: var(--muted); font-size: 20px; flex-shrink: 0; }
+
+  /* ── Arch diagram ── */
+  .arch { background: var(--card); border: 1.5px solid var(--border); border-radius: 12px; padding: 28px; margin: 18px 0; }
+  .arch-row { display: flex; align-items: center; justify-content: center; gap: 0; flex-wrap: wrap; margin: 8px 0; }
+  .ab {
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+  }
+  .ab.coral  { background: rgba(255,124,102,0.12); border: 1.5px solid var(--coral);  color: #9B3A28; }
+  .ab.navy   { background: var(--navy); color: #fff; }
+  .ab.green  { background: rgba(14,195,139,0.12);  border: 1.5px solid var(--green);  color: #065F46; }
+  .ab.blue   { background: rgba(0,133,240,0.1);    border: 1.5px solid var(--blue);   color: #1D4ED8; }
+  .ab.purple { background: rgba(160,50,145,0.1);   border: 1.5px solid var(--purple); color: var(--purple); }
+  .arch-arrow { color: var(--muted); font-size: 22px; padding: 0 6px; }
+  .arch-note { font-size: 11px; color: var(--muted); text-align: center; margin-top: 14px; }
+
+  /* ── Checklist ── */
+  .checklist { list-style: none; background: var(--card); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; margin: 16px 0; }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    transition: background 0.15s;
+  }
+  .checklist li:last-child { border-bottom: none; }
+  .checklist li:hover { background: #F9FAFC; }
+  .checklist input[type=checkbox] {
+    width: 17px; height: 17px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--coral);
+    cursor: pointer;
+  }
+  .checklist label { cursor: pointer; color: var(--text); }
+  .checklist input:checked + label { color: var(--muted); text-decoration: line-through; }
+
+  /* ── Progress ── */
+  .progress-wrap {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 8px;
+    margin-top: 24px;
+  }
+  .progress-bar-bg { background: var(--border); border-radius: 8px; height: 8px; overflow: hidden; }
+  .progress-bar    { height: 100%; background: linear-gradient(90deg, var(--coral), var(--purple)); border-radius: 8px; transition: width 0.4s ease; }
+
+  /* ── Footer ── */
+  footer {
+    background: var(--navy);
+    color: rgba(255,255,255,0.5);
+    text-align: center;
+    padding: 20px;
+    font-size: 12.5px;
+    margin-top: 0;
+  }
+  footer strong { color: rgba(255,255,255,0.8); }
+
+  /* ── Responsive ── */
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    nav { position: static; height: auto; }
+    main { padding: 24px 20px; }
+    header { padding: 32px 20px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════ HEADER ═══════════════════════════════ -->
+<header>
+  <div class="header-inner">
+    <div class="header-badge">Boomi MFT · Lab</div>
+    <h1>Managed File Transfer 101</h1>
+    <p class="subtitle">Simple, secure, and reliable file transfers — built on Boomi's unified integration platform. This lab walks you through everything from core concepts to live multi-partner routing.</p>
+    <div class="header-meta">
+      <span class="meta-pill">⏱ ~60 min</span>
+      <span class="meta-pill">👥 Technical &amp; Business Users</span>
+      <span class="meta-pill">🖥 Live Demo Environment</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+
+<!-- ═══════════════════════════════ SIDEBAR ═══════════════════════════════ -->
+<nav id="sidebar">
+  <div class="nav-section-label">Overview</div>
+  <a href="#intro" class="active"><span class="nav-num">1</span> Introduction</a>
+  <a href="#concepts"><span class="nav-num">2</span> Core Concepts</a>
+
+  <div class="nav-section-label">Platform Tour</div>
+  <a href="#dashboard"><span class="nav-num">3</span> Dashboard</a>
+  <a href="#organisations"><span class="nav-num">4</span> Organisations &amp; Endpoints</a>
+  <a href="#security"><span class="nav-num">5</span> Keys &amp; Certificates</a>
+  <a href="#runtimes"><span class="nav-num">6</span> Runtimes</a>
+
+  <div class="nav-section-label">Building Flows</div>
+  <a href="#flows"><span class="nav-num">7</span> Creating Flows</a>
+  <a href="#source-config"><span class="nav-num">8</span> Source Configuration</a>
+  <a href="#target-config"><span class="nav-num">9</span> Target Configuration</a>
+
+  <div class="nav-section-label">Real World</div>
+  <a href="#realworld"><span class="nav-num">10</span> Manufacturing Scenario</a>
+  <a href="#monitoring"><span class="nav-num">11</span> Monitoring &amp; Alerts</a>
+  <a href="#admin"><span class="nav-num">12</span> Administration</a>
+
+  <div class="nav-section-label">Wrap-Up</div>
+  <a href="#summary"><span class="nav-num">✓</span> Summary &amp; Checklist</a>
+</nav>
+
+<!-- ═══════════════════════════════ MAIN ═══════════════════════════════ -->
+<main>
+
+<!-- 1 · INTRODUCTION ───────────────────────────────────────────────────── -->
+<section id="intro">
+  <div class="section-header">
+    <div class="section-num">1</div>
+    <h2>Introduction</h2>
+    <span class="section-tag">Overview</span>
+  </div>
+
+  <p>Welcome to <strong>Boomi Managed File Transfer (MFT)</strong> — your solution for simple, secure, and reliable file transfers. As part of Boomi's unified data integration platform, Boomi MFT consolidates all your file transfer operations into a single platform, streamlining workflows and reducing costs.</p>
+
+  <p>If you're managing a fragmented landscape of legacy SFTP servers, custom scripts, and point-to-point solutions, you know how difficult it is to monitor, govern, and scale. Boomi MFT eliminates that complexity — delivering enterprise-grade security, governance, and control in one platform accessible to both technical and business users.</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <h4>🔒 Enterprise Security</h4>
+      <p>End-to-end encryption, PGP/SSH key management, FTPS certificates, and built-in AV scanning — included, not bolted on.</p>
+    </div>
+    <div class="card purple-top">
+      <h4>🔍 Full Visibility</h4>
+      <p>Every transfer is tracked end-to-end. See when a file arrived, was renamed, compressed, delivered — or failed.</p>
+    </div>
+    <div class="card green-top">
+      <h4>🌐 Flexible Deployment</h4>
+      <p>Cloud, on-premises, and hybrid. MFT Runtimes bridge firewalls and access local file systems the cloud can't reach.</p>
+    </div>
+    <div class="card blue-top">
+      <h4>🤝 Multi-Party Ready</h4>
+      <p>One flow, many subscribers. Add or remove partners without rebuilding your entire transfer process.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · CORE CONCEPTS ───────────────────────────────────────────────────── -->
+<section id="concepts">
+  <div class="section-header">
+    <div class="section-num">2</div>
+    <h2>Core Concepts</h2>
+    <span class="section-tag">Foundations</span>
+  </div>
+
+  <p>Boomi MFT is built around two applications and a handful of key objects. Getting these clear before you build will save you a lot of time.</p>
+
+  <h3>Two Applications</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>⚡ Automated File Transfer</h4>
+      <p>System-to-system. Scheduled batch processes or event-driven transfers. Built around <strong>Flows</strong> — the main focus of this lab.</p>
+    </div>
+    <div class="card purple-top">
+      <h4>📤 File Sharing</h4>
+      <p>User-centric, ad-hoc transfers. Designed for large or sensitive files that people need to send manually.</p>
+    </div>
+  </div>
+
+  <h3>Key Objects</h3>
+  <table>
+    <thead><tr><th>Object</th><th>What it is</th><th>Think of it as…</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Organisation</strong></td><td>A participant — internal entity or external partner/supplier</td><td>A company or department</td></tr>
+      <tr><td><strong>Endpoint</strong></td><td>Connection credentials and protocol for an organisation (SFTP, S3, etc.)</td><td>A mailbox or loading dock</td></tr>
+      <tr><td><strong>Flow</strong></td><td>The file transport route. Organisations subscribe as source or target. <em>Flows, not folders.</em></td><td>A shipping lane</td></tr>
+      <tr><td><strong>Runtime</strong></td><td>A lightweight agent installed on-premises to reach behind firewalls and local file systems</td><td>A local delivery driver</td></tr>
+      <tr><td><strong>Subscriber</strong></td><td>An organisation participating in a flow — as source, target, or both</td><td>A channel subscriber</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <span class="callout-icon">📌</span>
+    <div class="callout-body">
+      <strong>Flows are pub/sub</strong>
+      One flow can have multiple sources and multiple targets. You add or remove subscribers without changing anything else. A single organisation can be a source in one flow and a target in another.
+    </div>
+  </div>
+
+  <h3>Architecture at a Glance</h3>
+  <div class="arch">
+    <div class="arch-row">
+      <div class="ab coral">ERP / Integration Layer</div>
+      <div class="arch-arrow">→</div>
+      <div class="ab navy">Boomi MFT Platform</div>
+      <div class="arch-arrow">→</div>
+      <div class="ab green">Partners &amp; Suppliers</div>
+    </div>
+    <div class="arch-row" style="margin-top:14px; gap:24px;">
+      <div style="text-align:center">
+        <div class="ab blue" style="font-size:12px; padding:7px 14px;">MFT Cloud Processing</div>
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">External / cloud transfers</div>
+      </div>
+      <div style="text-align:center">
+        <div class="ab purple" style="font-size:12px; padding:7px 14px;">On-Prem Runtime</div>
+        <div style="font-size:11px; color:var(--muted); margin-top:4px;">Behind firewall / local FS</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · DASHBOARD ───────────────────────────────────────────────────── -->
+<section id="dashboard">
+  <div class="section-header">
+    <div class="section-num">3</div>
+    <h2>The MFT Dashboard</h2>
+    <span class="section-tag">Platform Tour</span>
+  </div>
+
+  <p>The dashboard is your command centre — a real-time summary of all file activity across your network. It shows <strong>ingress and egress</strong> volumes, lets you filter by time period and organisation, and gives you an at-a-glance health check without having to dig into individual transfers.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">MFT Dashboard — Summary, File Processing &amp; Transfer Activity</div>
+    <img src="mft-screenshots/01-dashboard.jpg" alt="Boomi MFT Dashboard showing summary stats and transfer activity chart">
+  </div>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Summary Panel</h4>
+        <p>Shows total ingress/egress bytes and current storage usage at a glance. Quickly tells you how active your MFT instance has been this month.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>File Processing Stats</h4>
+        <p>Counts of encrypted, decrypted, compressed, and decompressed files for the period — useful for spotting unusual volume changes.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Transfer Activity Chart</h4>
+        <p>Incoming vs. outgoing transfers plotted over the month. Hover data points to see breakdowns. Filter by month or specific organisation to scope the view.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Navigate to Activity</h4>
+        <p>From the dashboard, select <strong>Activity</strong> in the left nav to see individual file transfer events with full audit trails for compliance reporting.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <span class="callout-icon">✅</span>
+    <div class="callout-body">
+      <strong>Compliance-ready by default</strong>
+      Every transfer is automatically logged. The audit capabilities are built in — no custom configuration required to meet regulatory requirements.
+    </div>
+  </div>
+</section>
+
+<!-- 4 · ORGANISATIONS & ENDPOINTS ──────────────────────────────────────── -->
+<section id="organisations">
+  <div class="section-header">
+    <div class="section-num">4</div>
+    <h2>Organisations &amp; Endpoints</h2>
+    <span class="section-tag">Platform Setup</span>
+  </div>
+
+  <p>Before building a flow, you create the participants and define how they connect. <strong>Organisations</strong> are the containers; <strong>Endpoints</strong> hold the connection credentials and protocol type.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Organisations — create or select an existing organisation</div>
+    <img src="mft-screenshots/02-organisations.jpg" alt="Boomi MFT Organisations list view">
+  </div>
+
+  <h3>Creating an Organisation</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Navigate to Organisations</h4>
+        <p>Select <strong>Organisations</strong> in the left navigation. You'll see all existing participants.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Add Organisation</h4>
+        <p>Click <strong>Add Organisation</strong>, give it a meaningful name ("Supplier A", "Headquarters"), and save. This creates the container that holds their endpoints and keys.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Add Endpoints</h4>
+        <p>Inside the organisation, click <strong>Add Endpoint</strong>. Name it, choose the protocol type from the list, and fill in the connection details. An organisation can have multiple endpoints.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Test &amp; Validate</h4>
+        <p>Use <strong>Test Connection</strong> and <strong>Validate</strong> buttons to confirm connectivity before using the endpoint in a flow. Fix any issues before it goes live.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Organisation Detail — multiple endpoint types on a single organisation</div>
+    <img src="mft-screenshots/02b-org-detail.jpg" alt="Boomi MFT organisation detail showing multiple endpoint types">
+  </div>
+
+  <h3>Supported Endpoint Types</h3>
+  <div class="pill-grid">
+    <span class="pill sftp">SFTP – External Server</span>
+    <span class="pill sftp">SFTP – Internal (Hosted)</span>
+    <span class="pill s3">Amazon S3</span>
+    <span class="pill blob">Azure Blob Storage</span>
+    <span class="pill ftps">FTPS</span>
+    <span class="pill ftp">FTP</span>
+    <span class="pill gcs">Google Cloud Storage</span>
+    <span class="pill smb">Network File Share (SMB)</span>
+    <span class="pill fs">Local File System</span>
+    <span class="pill s3">Boomi File Share</span>
+  </div>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Endpoint types — selecting a protocol when adding a new endpoint</div>
+    <img src="mft-screenshots/03-endpoints.jpg" alt="Boomi MFT endpoint type selection">
+  </div>
+
+  <div class="callout note">
+    <span class="callout-icon">♻️</span>
+    <div class="callout-body">
+      <strong>Endpoints are reusable authentication containers</strong>
+      Credentials live in the endpoint. Transfer-specific parameters (paths, schedules, filters) are set when you add the endpoint to a flow. The same endpoint can be a source in one flow and a target in another.
+    </div>
+  </div>
+</section>
+
+<!-- 5 · KEYS & CERTIFICATES ────────────────────────────────────────────── -->
+<section id="security">
+  <div class="section-header">
+    <div class="section-num">5</div>
+    <h2>Keys &amp; Certificates</h2>
+    <span class="section-tag">Security</span>
+  </div>
+
+  <p>All cryptographic material is managed in one place — no more tracking key files in shared drives or updating scripts when keys rotate.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Key Management — PGP and SSH key sets per organisation</div>
+    <img src="mft-screenshots/04-keys.jpg" alt="Boomi MFT key management screen">
+  </div>
+
+  <table>
+    <thead><tr><th>Key Type</th><th>Used For</th><th>Create or Import?</th></tr></thead>
+    <tbody>
+      <tr><td><strong>PGP Key Sets</strong></td><td>Encrypting/decrypting file content in transit and at rest</td><td>Create (algorithm &amp; key strength) or Import</td></tr>
+      <tr><td><strong>SSH Key Sets</strong></td><td>SFTP authentication — share your public key with partners, or import theirs</td><td>Create (algorithm &amp; key strength) or Import</td></tr>
+      <tr><td><strong>Certificates</strong></td><td>FTPS connections (TLS mutual auth)</td><td>Import only — issued externally</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout warn">
+    <span class="callout-icon">⚠️</span>
+    <div class="callout-body">
+      <strong>Watch your key expiry dates</strong>
+      The platform clearly shows which keys have expired. Make key rotation a regular operations task — expired keys on a partner endpoint will cause transfers to fail at the worst possible time.
+    </div>
+  </div>
+
+  <p>Keys are scoped to an organisation. Multi-tenant by design — one partner's keys are never visible to another, enabling true data sovereignty for all participants.</p>
+</section>
+
+<!-- 6 · RUNTIMES ───────────────────────────────────────────────────────── -->
+<section id="runtimes">
+  <div class="section-header">
+    <div class="section-num">6</div>
+    <h2>Runtimes</h2>
+    <span class="section-tag">Hybrid Deployment</span>
+  </div>
+
+  <p>A <strong>Runtime</strong> is a lightweight agent you install on any machine — on-premises, in a VM, or in a private cloud. It extends Boomi MFT behind firewalls and enables transfers to local file systems, network shares, and mapped drives that the cloud cannot reach directly.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Runtime Manager — live runtimes reporting heartbeat to the cloud</div>
+    <img src="mft-screenshots/05-runtime-portal.jpg" alt="Boomi MFT runtime manager showing active runtimes">
+  </div>
+
+  <h3>Installing a Runtime</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Create in the Portal</h4>
+        <p>Navigate to <strong>Runtimes</strong>. Click <strong>Add Runtime</strong>, give it a name, save — then click the Download button to get the installer.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Install via Script</h4>
+        <p><strong>Windows:</strong> Copy the generated PowerShell script, paste into an elevated prompt — it installs and self-configures.<br>
+        <strong>Linux:</strong> Grab the apt/yum or systemd script, paste into a terminal — same result.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Verify in the Portal</h4>
+        <p>Once running, the runtime appears as <strong>Alive</strong> with its hostname, IP, and last heartbeat timestamp. The cloud manages scheduling and job assignment from here.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <span class="callout-icon">🔄</span>
+    <div class="callout-body">
+      <strong>Cloud-orchestrated, locally-executed</strong>
+      The runtime polls the cloud for jobs, processes them locally, and reports results back. This means no inbound firewall rules are needed — only outbound HTTPS. The runtime startup sequence is: check for update → validate API token → start processing jobs in a loop.
+    </div>
+  </div>
+
+  <h3>What a Runtime Can Access</h3>
+  <p>If the operating system can mount or see a path, the runtime can use it:</p>
+  <div class="pill-grid">
+    <span class="pill fs">Local File System (any path)</span>
+    <span class="pill smb">Windows Mapped Drives</span>
+    <span class="pill smb">Network Shares (SMB/NFS)</span>
+    <span class="pill fs">Linux Soft/Hard Mounts</span>
+    <span class="pill s3">Cloud Storage (via credentials)</span>
+  </div>
+
+  <h3>Heartbeat Alerts</h3>
+  <p>Click any runtime to configure alert recipients for when it goes offline or comes back online. Assign to specific email addresses rather than all admins — keep the signal relevant.</p>
+</section>
+
+<!-- 7 · CREATING FLOWS ─────────────────────────────────────────────────── -->
+<section id="flows">
+  <div class="section-header">
+    <div class="section-num">7</div>
+    <h2>Creating Flows</h2>
+    <span class="section-tag">Core Feature</span>
+  </div>
+
+  <p>A <strong>Flow</strong> is the core unit of Boomi MFT. It defines a file transport route and the organisations that participate in it as sources and targets.</p>
+
+  <div class="callout info">
+    <span class="callout-icon">📌</span>
+    <div class="callout-body">
+      <strong>Flows, not folders</strong>
+      Traditional MFT is folder-based — logic lives in naming conventions and scripts. Boomi MFT is flow-based — all the logic, routing, and transformation is configured in the flow itself.
+    </div>
+  </div>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Flows — listing of all organisation flows with status, codes, and subscriber counts</div>
+    <img src="mft-screenshots/06-flows-list.jpg" alt="Boomi MFT flows list showing multiple configured flows">
+  </div>
+
+  <h3>Building a Flow</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Create the Flow</h4>
+        <p>Click <strong>Add Flow</strong>, give it a descriptive name ("Supplier Orders to HQ"), and save. Additional options: export to a file, export to FileZilla, disable, or delete from the flows list.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Add Subscribers</h4>
+        <p>Open <strong>Subscribers</strong>. All organisations in your instance are shown. Select the ones participating in this flow — Headquarters, Partner 1, Supplier, Vendor — and click Subscribe.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Configure Sources</h4>
+        <p>For each source organisation, choose which of their endpoints to collect from — their external SFTP, their S3 bucket, or your internal hosted server. Multiple endpoints per organisation are supported.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Configure Targets</h4>
+        <p>For each target, choose the delivery endpoint and path. Define processing, transformations, and outbound triggers.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Publish</h4>
+        <p>Push and publish the flow. It becomes active immediately — runtimes and cloud processors start acting on it based on their configured schedules.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Subscribers — all organisations in the instance, shown when adding to a flow</div>
+    <img src="mft-screenshots/07-flow-subscribers.jpg" alt="Boomi MFT flow subscribers list">
+  </div>
+
+  <div class="flow-diagram">
+    <p class="flow-label">Example — Multiple Suppliers → Headquarters</p>
+    <div class="flow-row">
+      <div class="fn src">Partner 1<br><small style="font-weight:400; font-size:11px">External SFTP</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="fn hub" style="font-size:14px; font-weight:800;">FLOW<br><small style="font-weight:400; font-size:11px">MFT Orchestrated</small></div>
+      <div class="flow-arrow">→</div>
+      <div class="fn hq">Headquarters<br><small style="font-weight:400; font-size:11px">Network Share</small></div>
+    </div>
+    <div class="flow-row" style="margin-top:4px;">
+      <div class="fn src">Supplier<br><small style="font-weight:400; font-size:11px">S3 Bucket</small></div>
+      <span style="visibility:hidden" class="flow-arrow">→</span>
+      <div style="width:120px"></div>
+    </div>
+    <div class="flow-row">
+      <div class="fn src">Vendor<br><small style="font-weight:400; font-size:11px">Internal Drop</small></div>
+    </div>
+  </div>
+</section>
+
+<!-- 8 · SOURCE CONFIGURATION ───────────────────────────────────────────── -->
+<section id="source-config">
+  <div class="section-header">
+    <div class="section-num">8</div>
+    <h2>Source Configuration</h2>
+    <span class="section-tag">Flow Detail</span>
+  </div>
+
+  <p>When you add a source endpoint to a flow, you configure how Boomi MFT collects files from it. These are per-source settings, separate from the endpoint's base credentials.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Source Configuration — the Flow Endpoint Editor with tabs for each setting category</div>
+    <img src="mft-screenshots/08-source-config.jpg" alt="Boomi MFT source endpoint configuration tabs">
+  </div>
+
+  <h3>Processing</h3>
+  <p>Choose whether this source is processed by the <strong>Cloud</strong> or a specific <strong>Runtime</strong>. Cloud handles most external connections; runtime is required for on-premises paths or local file systems.</p>
+
+  <h3>Filtering Options</h3>
+  <table>
+    <thead><tr><th>Filter</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Include (Regex)</strong></td><td>Only collect files matching this pattern — e.g. <code>.*\.csv$</code> to pull only CSV files</td></tr>
+      <tr><td><strong>Exclude (Regex)</strong></td><td>Skip files matching this pattern — e.g. exclude temp or archive files</td></tr>
+      <tr><td><strong>Date Filter</strong></td><td>Only collect files before/after/between specific dates. Critical for servers with years of historical files you don't want to pull accidentally.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Post-Collection Actions</h3>
+  <div class="card-grid">
+    <div class="card">
+      <h4>Delete from Source</h4>
+      <p>After successful collection, delete the file. Standard for "pick up once" workflows.</p>
+    </div>
+    <div class="card purple-top">
+      <h4>Archive on Source</h4>
+      <p>Move to an archive path instead of deleting. Choose one or the other — not both.</p>
+    </div>
+    <div class="card green-top">
+      <h4>Include Subfolders</h4>
+      <p>Recursively collect from subdirectories under the configured base path.</p>
+    </div>
+  </div>
+
+  <h3>Encryption &amp; Decryption</h3>
+  <p>If incoming files are PGP-encrypted, configure decryption with a stored private key. Optionally verify authenticity with a signature key. This happens automatically in the processing pipeline.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Processing Options tab — encryption key selection, signing key, and error handling</div>
+    <img src="mft-screenshots/08b-source-encrypt.jpg" alt="Boomi MFT source encryption and processing options">
+  </div>
+
+  <div class="callout tip">
+    <span class="callout-icon">🛡</span>
+    <div class="callout-body">
+      <strong>AV scanning is automatic</strong>
+      Files passing through the Boomi MFT cloud are automatically scanned for viruses and malware. No configuration required — it's on by default.
+    </div>
+  </div>
+
+  <h3>Trigger Options — When Is a File "Ready"?</h3>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Trigger File Settings — control when MFT considers a file ready to collect</div>
+    <img src="mft-screenshots/09-trigger-files.jpg" alt="Boomi MFT trigger file configuration options">
+  </div>
+
+  <table>
+    <thead><tr><th>Trigger Type</th><th>How It Works</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Disabled</strong></td><td>Collect immediately — no trigger mechanism</td></tr>
+      <tr><td><strong>Temp Filename</strong></td><td>Wait for a <code>.tmp</code> or <code>.part</code> suffix to disappear — indicates the file has finished writing</td></tr>
+      <tr><td><strong>Trigger File (per file)</strong></td><td>A separate signal file per data file indicates it's ready to transfer</td></tr>
+      <tr><td><strong>One Trigger File</strong></td><td>A single semaphore file indicates the entire batch is ready — deleted after all files transfer</td></tr>
+    </tbody>
+  </table>
+
+  <h3>File Renaming</h3>
+  <p>The rename engine is a visual pattern builder. Define matching rules (regex), then construct new filenames using building blocks: original name, timestamp (with format options), static text, and separators. Preview the result live before saving.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Rename Builder — pattern builder with live test string preview</div>
+    <img src="mft-screenshots/09b-rename-builder.jpg" alt="Boomi MFT file rename pattern builder with live preview">
+  </div>
+
+  <h3>Source Alerts</h3>
+  <p>Configure per-recipient email alerts at the source level:</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Alerts Configuration — inactivity and error alerts with per-recipient filtering</div>
+    <img src="mft-screenshots/09c-alerts-source.jpg" alt="Boomi MFT source alert configuration">
+  </div>
+
+  <p>Each alert recipient can be filtered to receive only the alert types they care about — success emails, errors only, quarantine notices. Different people, different alert types, same flow.</p>
+</section>
+
+<!-- 9 · TARGET CONFIGURATION ───────────────────────────────────────────── -->
+<section id="target-config">
+  <div class="section-header">
+    <div class="section-num">9</div>
+    <h2>Target Configuration</h2>
+    <span class="section-tag">Flow Detail</span>
+  </div>
+
+  <p>The target side mirrors the source in structure, but defines <em>where</em> and <em>how</em> files are delivered.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Target Configuration — delivery path, concurrency, and outbound options</div>
+    <img src="mft-screenshots/10-target-config.jpg" alt="Boomi MFT target endpoint configuration">
+  </div>
+
+  <h3>Key Target Settings</h3>
+  <table>
+    <thead><tr><th>Setting</th><th>Description</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Delivery Path</strong></td><td>Base path + optional sub-path for this flow's files. For runtime targets, the runtime must have OS-level access to this path.</td></tr>
+      <tr><td><strong>Concurrency</strong></td><td>How many files to deliver simultaneously to this target</td></tr>
+      <tr><td><strong>Overwrite / Auto-timestamp</strong></td><td>What to do if a file with the same name already exists at the target</td></tr>
+      <tr><td><strong>Outbound Trigger File</strong></td><td>Generate a signal file when delivery is complete, so downstream systems know the batch is ready</td></tr>
+      <tr><td><strong>Temp Filename</strong></td><td>Write with a temp name while delivering; rename to final only when complete — prevents downstream systems consuming a partial file</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Source-to-Target Mapping</h3>
+  <p>The mapping layer lets you route specific sources to specific target paths within the same flow. A catch-all routes everything to one path; specific rules let you send Partner 1's files to Path A and Supplier's files to Path B — all in one flow, no custom code.</p>
+
+  <div class="callout info">
+    <span class="callout-icon">🗺</span>
+    <div class="callout-body">
+      <strong>One flow, many routing rules</strong>
+      5 sources, 3 targets, and a mapping table that routes each source's files to the right target paths. All configured in the flow — no scripting required.
+    </div>
+  </div>
+</section>
+
+<!-- 10 · REAL-WORLD SCENARIO ───────────────────────────────────────────── -->
+<section id="realworld">
+  <div class="section-header">
+    <div class="section-num">10</div>
+    <h2>Real-World Scenario</h2>
+    <span class="section-tag">Manufacturing Example</span>
+  </div>
+
+  <div class="scenario">
+    <div class="scenario-tag">Use Case</div>
+    <h3>Manufacturing Supply Chain — Automated Purchase Orders</h3>
+    <p>A manufacturing enterprise manages multiple suppliers for raw materials. When inventory drops below a threshold, the ERP system generates purchase orders. Those orders are transformed by the Boomi integration layer, handed to Boomi MFT, and routed to each supplier simultaneously — with Headquarters getting an archive copy of everything.</p>
+  </div>
+
+  <h3>System Architecture</h3>
+  <div class="arch">
+    <div class="arch-row">
+      <div class="ab coral">ERP System<br><small style="font-weight:400">Inventory drops → PO generated</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="ab blue">Boomi Integration<br><small style="font-weight:400">Transforms &amp; routes to MFT API</small></div>
+      <div class="arch-arrow">→</div>
+      <div class="ab navy">Boomi MFT<br><small style="font-weight:400">Distributes to all subscribers</small></div>
+    </div>
+    <div class="arch-row" style="margin-top:14px; gap:12px; flex-wrap:wrap;">
+      <div class="ab green" style="font-size:12px; text-align:center">Supplier A<br><small style="font-weight:400">S3 Bucket</small></div>
+      <div class="ab green" style="font-size:12px; text-align:center">Supplier B<br><small style="font-weight:400">External SFTP</small></div>
+      <div class="ab green" style="font-size:12px; text-align:center">Supplier C<br><small style="font-weight:400">Internal Drop</small></div>
+      <div class="ab blue" style="font-size:12px; text-align:center">HQ Archive<br><small style="font-weight:400">SFTP Record</small></div>
+    </div>
+    <p class="arch-note">The flow runs on a schedule. Each supplier only sees their own file. Headquarters receives all files for audit.</p>
+  </div>
+
+  <h3>Step-by-Step Walkthrough</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Boomi Integration Drops Files into MFT</h4>
+        <p>The integration process generates PO files and calls the MFT API — passing the storage key, secret, and target flow/endpoint — to stage the files for distribution. One file per supplier, named accordingly (<code>[001]_110326.xml</code>, <code>[002]_110326.xml</code>, etc.).</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>MFT Receives and Stages the Files</h4>
+        <p>MFT picks up the files from the "Boomi Drop Off" flow endpoint. The Activity view immediately shows the files arriving — which flow, which organisation, file size, and timestamp.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Flow Routing Distributes to Each Subscriber</h4>
+        <p>Using the flow's mapping rules: <code>[001]</code> file → Partner 1, <code>[002]</code> → Partner 2, <code>[003]</code> → Partner 3. Headquarters receives a copy of all files. Each supplier only sees their own PO — no cross-tenant visibility.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Failures Are Caught and Alerted Immediately</h4>
+        <p>If Partner 3's S3 endpoint is down, MFT logs the failure in the Activity view and fires an alert email. The other deliveries continue normally. The broken endpoint shows a delivery count of "0/1" — easy to spot.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Activity View — live file routing showing multiple flows, partners, and delivery status</div>
+    <img src="mft-screenshots/13-routing-delivery.jpg" alt="Boomi MFT Activity view showing live file routing across multiple partners">
+  </div>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Activity view — per-partner file routing with delivery status across all subscribers</div>
+    <img src="mft-screenshots/14-per-partner-filtering.jpg" alt="Boomi MFT per-partner file delivery and filtering results">
+  </div>
+
+  <h3>Boomi Integration ↔ Boomi MFT</h3>
+  <p>The connection between Boomi Integration and Boomi MFT is bidirectional and API-driven. The integration process uses the MFT API connector with stored credentials (storage key + secret) to identify the target flow endpoint. The reverse works too — MFT can stage a file for Boomi Integration to pick up, triggering downstream processing. Both directions are visible and traceable in the Activity view.</p>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Boomi Integration — the MFT connector in action, pushing files to a flow endpoint</div>
+    <img src="mft-screenshots/12-boomi-integration.jpg" alt="Boomi Integration process connecting to Boomi MFT flow endpoint">
+  </div>
+
+  <div class="callout tip">
+    <span class="callout-icon">🔌</span>
+    <div class="callout-body">
+      <strong>API-first throughout</strong>
+      Everything in the MFT UI — create flows, manage organisations, trigger transfers, view activity — is also available via API. Your integration processes, ITSM tools, and CI/CD pipelines can fully automate MFT management.
+    </div>
+  </div>
+</section>
+
+<!-- 11 · MONITORING & ALERTS ───────────────────────────────────────────── -->
+<section id="monitoring">
+  <div class="section-header">
+    <div class="section-num">11</div>
+    <h2>Monitoring &amp; Alerts</h2>
+    <span class="section-tag">Operations</span>
+  </div>
+
+  <p>Boomi MFT responds to failures immediately — no polling, no waiting for someone to check a dashboard.</p>
+
+  <h3>The Alerts Page</h3>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Alerts — system-generated alerts showing connection errors, inactivity, and quarantined files</div>
+    <img src="mft-screenshots/15b-alerts-page.jpg" alt="Boomi MFT alerts page showing active critical and warning alerts">
+  </div>
+
+  <p>The Alerts page shows all active alerts across every flow and organisation — severity (Critical / Warning), the affected flow and partner, and the alert type. Once an issue is resolved, clear the alert to keep the view clean. Alerts are also emailed to configured recipients as they fire.</p>
+
+  <h3>Alert Types</h3>
+  <table>
+    <thead><tr><th>Type</th><th>What It Means</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Connection Error</strong></td><td>MFT can't reach an endpoint — credentials expired, server down, or firewall change</td></tr>
+      <tr><td><strong>Inactivity</strong></td><td>No files transferred in the expected window — partner may have a problem on their side</td></tr>
+      <tr><td><strong>Quarantined</strong></td><td>File failed AV scan or couldn't be decrypted — held for manual review</td></tr>
+      <tr><td><strong>Path Error</strong></td><td>Configured path no longer exists or accessible — common after infrastructure changes</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Activity View — Full File Lifecycle</h3>
+  <p>Every file in the Activity view shows its complete lifecycle: received → renamed/compressed/encrypted → delivered (or failed) — with timestamps at each step. Filterable by flow, organisation, endpoint, filename, date range, and transfer status. Exportable for compliance reporting.</p>
+
+  <div class="callout note">
+    <span class="callout-icon">🔔</span>
+    <div class="callout-body">
+      <strong>Downstream notifications</strong>
+      MFT doesn't just notify people — it can notify downstream systems. If a delivery fails, integration processes waiting for that file can be told immediately, enabling automated retry or escalation logic.
+    </div>
+  </div>
+</section>
+
+<!-- 12 · ADMINISTRATION ─────────────────────────────────────────────────── -->
+<section id="admin">
+  <div class="section-header">
+    <div class="section-num">12</div>
+    <h2>Administration</h2>
+    <span class="section-tag">Platform Management</span>
+  </div>
+
+  <h3>User Roles</h3>
+  <table>
+    <thead><tr><th>Role</th><th>Access Level</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Administrator</strong></td><td>Full access — users, organisations, flows, runtimes, keys, configuration, and audit log</td></tr>
+      <tr><td><strong>Instance User</strong></td><td>Manages flows and organisations, but not system-wide settings</td></tr>
+      <tr><td><strong>Organisation User</strong></td><td>Scoped to a single organisation — manages their endpoints, sees only their transfers</td></tr>
+      <tr><td><strong>Transfer User</strong></td><td>Self-service portal access for ad-hoc file sharing — can't see other users' files</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout info">
+    <span class="callout-icon">🔐</span>
+    <div class="callout-body">
+      <strong>True multi-tenant isolation</strong>
+      Organisation Users have no visibility into other organisations or their transfers. Transfer Users see only their own files. Partners get self-service access without any cross-tenant exposure risk.
+    </div>
+  </div>
+
+  <h3>Audit Log</h3>
+
+  <div class="screenshot-wrap">
+    <div class="screenshot-caption">Admin › Audit Log — every action tracked by user, event type, and timestamp</div>
+    <img src="mft-screenshots/16-audit-log.jpg" alt="Boomi MFT audit log showing configuration change history">
+  </div>
+
+  <p>Every administrative action is logged — configuration changes, user creation, flow updates, key imports, alert clears. Who did what, and when. Exportable to CSV. This applies to everything including API-driven changes, so your CI/CD pipelines and automation are also fully auditable.</p>
+</section>
+
+<!-- SUMMARY ─────────────────────────────────────────────────────────────── -->
+<section id="summary">
+  <div class="section-header">
+    <div class="section-num check">✓</div>
+    <h2>Summary &amp; Checklist</h2>
+    <span class="section-tag">Wrap-Up</span>
+  </div>
+
+  <p>Use this checklist to confirm you've covered the key capabilities. Check each item off as you complete it.</p>
+
+  <ul class="checklist" id="checklist">
+    <li><input type="checkbox" id="c1"><label for="c1">Reviewed the MFT Dashboard — ingress/egress volumes, file processing stats, and the Activity view</label></li>
+    <li><input type="checkbox" id="c2"><label for="c2">Created an Organisation and added multiple Endpoint types</label></li>
+    <li><input type="checkbox" id="c3"><label for="c3">Tested and validated at least one endpoint connection</label></li>
+    <li><input type="checkbox" id="c4"><label for="c4">Configured PGP or SSH keys for a partner organisation</label></li>
+    <li><input type="checkbox" id="c5"><label for="c5">Installed or reviewed a Runtime — heartbeat monitoring, configuration, and alert recipients</label></li>
+    <li><input type="checkbox" id="c6"><label for="c6">Created a Flow with multiple subscriber organisations</label></li>
+    <li><input type="checkbox" id="c7"><label for="c7">Configured a Source — processing, filtering, date filters, trigger settings, rename, and alerts</label></li>
+    <li><input type="checkbox" id="c8"><label for="c8">Configured a Target — delivery path, concurrency, outbound triggers, and source-to-target mapping</label></li>
+    <li><input type="checkbox" id="c9"><label for="c9">Published the flow and observed it processing files in the Activity view</label></li>
+    <li><input type="checkbox" id="c10"><label for="c10">Walked through the manufacturing real-world scenario — ERP → Integration → MFT → Suppliers</label></li>
+    <li><input type="checkbox" id="c11"><label for="c11">Observed per-partner file routing and filtering in the Activity view</label></li>
+    <li><input type="checkbox" id="c12"><label for="c12">Reviewed the Alerts page — connection errors, inactivity alerts, and how to clear resolved alerts</label></li>
+    <li><input type="checkbox" id="c13"><label for="c13">Explored user roles and the audit log in Administration</label></li>
+  </ul>
+
+  <div class="progress-wrap">
+    <span>Lab progress</span>
+    <span id="progress-label">0 / 13 completed</span>
+  </div>
+  <div class="progress-bar-bg">
+    <div class="progress-bar" id="progress-bar" style="width:0%"></div>
+  </div>
+
+  <div class="callout tip" style="margin-top: 28px;">
+    <span class="callout-icon">🚀</span>
+    <div class="callout-body">
+      <strong>Key takeaways</strong>
+      Boomi MFT replaces fragmented SFTP servers, custom scripts, and legacy tools with a single, governed platform. The pub/sub flow model makes it simple to add or change partners without rebuilding processes. Built-in security, compliance tracking, and real-time alerting reduce operational overhead significantly — and because it's API-first throughout, it integrates naturally with the rest of the Boomi platform.
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<!-- ═══════════════════════════════ FOOTER ═══════════════════════════════ -->
+<footer>
+  Created by <strong>Alexei Godek</strong> · Field Engineer · © 2026 Boomi, Inc.
+</footer>
+
+<script>
+  // ── Active nav on scroll ──
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('nav a');
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const a = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (a) a.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-15% 0px -70% 0px' });
+  sections.forEach(s => io.observe(s));
+
+  // ── Smooth scroll ──
+  navLinks.forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      document.querySelector(a.getAttribute('href'))
+              .scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // ── Checklist progress ──
+  const boxes = document.querySelectorAll('#checklist input[type=checkbox]');
+  const bar   = document.getElementById('progress-bar');
+  const lbl   = document.getElementById('progress-label');
+  function updateProgress() {
+    const done = [...boxes].filter(b => b.checked).length;
+    bar.style.width = (done / boxes.length * 100) + '%';
+    lbl.textContent = `${done} / ${boxes.length} completed`;
+  }
+  boxes.forEach(b => b.addEventListener('change', updateProgress));
+</script>
+</body>
+</html>
